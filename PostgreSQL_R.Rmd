@@ -1,0 +1,93 @@
+---
+title: "PostgreSQL Tutorial"
+author:
+- name: Jeffrey Molendijk
+  affiliation: Precision & Systems Biomedicine, QIMR Berghofer, Australia
+output: 
+  html_document: 
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(DBI)
+library(dplyr)
+```
+
+# Prior setup
+In this example I'll use a PostgreSQL server for data access. 
+To get started you'll need to:
+1. Install PostgreSQL (http://www.postgresqltutorial.com/install-postgresql/)
+2. Import a CSV file as a table (http://www.postgresqltutorial.com/import-csv-file-into-posgresql-table/)
+3. Alternative, load .tar database directly in pgadmin. 
+First create a new database (set a name and click save). Then right click on your new database and select the restore option. Next select the "Custom or tar" option and navigate to the backup.tar file provided in this tutorial. Once you hit restore you should find the "ausnut" table in your database under "Schemas > public > Tables"
+
+# The AUSNUT dataset
+The AUSNUT dataset has two "header" rows, in which the first row is the header, and the second row are units. 
+
+# Connecting to PostgreSQL using R
+It is discouraged to type your database password directly into your R Markdown file or console. Instead it is encouraged to run getPass::getPass("") which will open a popup window where the password can be entered. getPass works when knitting a document, whilst rstudioapi::askForPassword("") or .rs.askForPassword("") will not work. 
+
+```{r connect postgreSQL}
+con <- dbConnect(RPostgres::Postgres(), user = "postgres", password = getPass::getPass("Database password"), dbname = "AUSNUT")
+```
+
+# Creating PostgreSQL database from csv
+
+```{r creating PostgreSQL database using R}
+ausnutnames = paste(read.csv(file = "AUSNUT/Release 1 - Food nutrient database.csv",header = FALSE, stringsAsFactors = FALSE)[1,] %>% unlist, read.csv(file = "AUSNUT/Release 1 - Food nutrient database.csv",header = FALSE, stringsAsFactors = FALSE)[2,] %>% unlist,sep = "_") %>% tolower()
+
+ausnut = read.csv(file = "AUSNUT/Release 1 - Food nutrient database.csv",header = FALSE, skip = 2) %>% purrr::set_names(., nm = ausnutnames) %>% as.data.frame()
+
+#Remove columns which are missing a heading from column 1
+ausnut = ausnut[,-c(colnames(ausnut) %>% grep("^_", .))]
+
+dbWriteTable(conn = con, name = "ausnutcsv", ausnut, overwrite = TRUE)
+
+# dbWriteTable(conn = con, name = "mtcars", mtcars %>% mutate(key = row.names(.)), overwrite = TRUE)
+
+```
+
+# Extracting and analyzing data from a PostgreSQL server
+
+```{r connect to local PostgreSQL database}
+# Add more example SQL queries
+
+ausnutcsv <- dbSendQuery(con, "SELECT * FROM public.ausnutcsv")
+fetched = dbFetch(ausnutcsv)
+
+fetched %>% select(`energy, with dietary fibre_kj`:`total dietary fibre_g`)
+
+fetchedpca =  ropls::opls(fetched %>% select(`energy, with dietary fibre_kj`:`total dietary fibre_g`) %>% as.matrix())
+mlviewer::ropls.plot(fetchedpca, xvar = "p1", yvar = "p2", col.pca = fetched$classification_ %>% as.factor())
+mlviewer::ropls.plot(fetchedpca, plottype = "loading", xvar = "p1", yvar = "p2") %>% plotly::ggplotly()
+
+fetchedwine = fetched %>% filter( grepl("Wine",fetched$`food name_`, ignore.case = TRUE)) %>% select(`aluminium (al)_ug`:`zinc (zn)_mg`) %>% select_if(~sum(!is.na(.)) > 10)
+
+fetchedwine %>% t %>% imputeLCMD::impute.ZERO(.) %>% t
+
+fetchedpca =  ropls::opls(fetchedwine %>% t %>% imputeLCMD::impute.ZERO(.) %>% t)
+mlviewer::ropls.plot(fetchedpca, xvar = "p1", yvar = "p2")
+mlviewer::ropls.plot(fetchedpca, plottype = "loading", xvar = "p1", yvar = "p2") %>% plotly::ggplotly()
+
+#Get column information
+dbColumnInfo(ausnutcsv)
+```
+
+# Creating a result dashboard
+Finally, we want to produce a dashboard highlighting the findings this dataset.
+
+Here we highlight the following results:
+1. Which food has the highest ratio of protein to fat/carbs
+2. Energy content per 100g / 100ml
+3. Lipid profile for foods
+4. Use the nutrient profile of foods/liquids in a PCA > e.g. filter food names containes "Wine" > parse foodnames to group by red, white, fortified, rose
+
+*Comments > Red wines contain about 2 times less aluminium as white wines. But red contain much more potassium
+
+5. Lipid profiles of oils and butters > FA / MFA / PUFA (3 values)
+
+```{r producing dashboard}
+
+```
