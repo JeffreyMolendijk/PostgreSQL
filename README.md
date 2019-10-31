@@ -16,7 +16,7 @@ To create a new database, open the servers tab (you will be asked to insert your
 
 ![Database creation](/img/tutorial_1.PNG)
 
-## Creating PostgreSQL databases using R
+## Creating PostgreSQL database tables using R
 Creating databases using pgAdmin can be a lengthy process, where the columns and corresponding datatypes of your new database need to be entered one by one. Instead we will use R to create the structure of our new database, and send it to PostgreSQL. 
 
 To start we will install and load the required packages for this tutorial.
@@ -39,3 +39,12 @@ Now we want to connect R to our PostgreSQL database. We will create a "PqConnect
 ```r
 con <- dbConnect(RPostgres::Postgres(), user = "postgres", password = getPass::getPass("Database password"), dbname = "AUSNUT")
 ```
+
+To add a table to our PostgreSQL database from R we would use the "dbWriteTable" command using our connection "con", setting a database name and selecting a dataframe. The overwrite command needs to be set to TRUE if you want to overwrite an existing table.
+*Note: The column names from mtcars are all lowercase, which is encouraged when creating column names in PostgreSQL. Once you run this command the table will appear in pgAdmin.
+
+```r
+dbWriteTable(conn = con, name = "mtcars", mtcars %>% mutate(key = row.names(.)), overwrite = TRUE)
+```
+
+![Database creation](/img/tutorial_2.PNG)

@@ -11,8 +11,15 @@ output:
 
 ```{r setup, include=FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(DBI)
+
+install.packages("dplyr")
+install.packages("DBI")
+install.packages("RPostgres")
+install.packages("getPass")
+
 library(dplyr)
+library(DBI)
+library(RPostgres)
 ```
 
 # Prior setup
