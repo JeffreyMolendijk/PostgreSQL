@@ -2,7 +2,7 @@
 A tutorial on using PostgreSQL in R. Includes database setup, table creation and extracting information using SQL queries.
 
 ## PostgreSQL and pgAdmin
-![pgAdmin logo](/img/welcome_logo.svg | width=50%)
+![pgAdmin logo](/img/welcome_logo.svg)
 
 PostgreSQL is described as "The World's Most Advanced Open Source Relational Database". 
 To get started with this tutorial you will need to install PostgreSQL on your computer. Please follow the detailed instruction on https://www.postgresql.org/ to install the software.
