@@ -48,3 +48,26 @@ dbWriteTable(conn = con, name = "mtcars", mtcars %>% mutate(key = row.names(.)),
 ```
 
 ![Database creation](/img/tutorial_2.PNG)
+
+## Interacting with our new PostgreSQL table
+Lets use some basic commands to interact with the new table we created. Go ahead and run the following lines of code to:
+1. Extract the names of the tables present in your PostgreSQL server.
+2. View the column names of the "mtcars" table.
+3. Read the "mtcars" table from PostgreSQL into R.
+
+```r
+dbListTables(con)
+dbListFields(con, "mtcars")
+dbReadTable(con, "mtcars")
+```
+
+In some cases you may not want to load all data into R, especially if the table is very large. Instead we can load a selection of the data based on certain criteria, using SQL queries.
+To extract data using SQL commands, we will use a combination of the dbSendQuery and dbFetch functions. Here we select all columns (*) from the table mtcars, for the rows in which hp is greater than 90 and cyl is greater than 6. Finally we will remove our connection to the PostgreSQL server.
+
+```r
+res <- dbSendQuery(con, "SELECT * FROM mtcars WHERE hp > 90 AND cyl > 6")
+dbFetch(res)
+dbClearResult(res)
+dbDisconnect(con)
+```
+By now you will know how to set up a PostgreSQL server and connect to it using R. In the near future I will add a new tutorial explaining data visualization using data extracted from databases.

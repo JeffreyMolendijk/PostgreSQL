@@ -12,10 +12,10 @@ output:
 ```{r setup, include=FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-install.packages("dplyr")
-install.packages("DBI")
-install.packages("RPostgres")
-install.packages("getPass")
+#install.packages("dplyr")
+#install.packages("DBI")
+#install.packages("RPostgres")
+#install.packages("getPass")
 
 library(dplyr)
 library(DBI)
@@ -53,14 +53,29 @@ ausnut = ausnut[,-c(colnames(ausnut) %>% grep("^_", .))]
 dbWriteTable(conn = con, name = "ausnutcsv", ausnut, overwrite = TRUE)
 
 # dbWriteTable(conn = con, name = "mtcars", mtcars %>% mutate(key = row.names(.)), overwrite = TRUE)
-
 ```
 
 # Extracting and analyzing data from a PostgreSQL server
+After creating a PostgreSQL database we can extract information using SQL queries
+
+```{r extracting data}
+#We can view the existing tables in our PostgreSQL server using:
+dbListTables(con)
+dbListFields(con, "mtcars")
+dbReadTable(con, "mtcars")
+
+res <- dbSendQuery(con, "SELECT * FROM mtcars WHERE hp > 90 AND cyl > 6")
+dbFetch(res)
+dbClearResult(res)
+
+dbClearResult(res)
+
+dbDisconnect(con)
+```
+
 
 ```{r connect to local PostgreSQL database}
 # Add more example SQL queries
-
 ausnutcsv <- dbSendQuery(con, "SELECT * FROM public.ausnutcsv")
 fetched = dbFetch(ausnutcsv)
 
